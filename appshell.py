@@ -242,8 +242,7 @@ class Shell:
 			for k, v in ([(alias, alias_expansion)] if alias else self._aliases.items()):
 				self.writef(fmt % (k, ' '.join(v)))
 
-# if __name__ == "__main__":
-if True:
+if __name__ == "__main__":
 	import os
 
 	def foo(argv):
