@@ -1,6 +1,8 @@
 #! /usr/bin/env python3
 
 import sys
+import functools
+import pydoc
 
 class Abbreviator:
 	class AmbiguousAbbreviation(Exception):
@@ -35,26 +37,29 @@ class Shell:
 	class ImproperUsage(Exception):
 		"Improper usage"
 
-	def __init__(self, stdin = sys.stdin, stdout = sys.stdout):
+	def __init__(self, stdin=sys.stdin, stdout=sys.stdout):
+		self._abbreviations = Abbreviator()
+		self._commands = [] # [dict(name, usage, description, help)...]
+		self._actions = {} # name -> action
+		self._aliases = {} # alias -> expansion
+		self._batch = False
 		self.stdin = stdin
 		self.stdout = stdout
-		self._abbreviations = Abbreviator()
-		self._commands = [] # [dict(command, usage, description)...]
-		self._actions = {} # command -> action
-		self._aliases = {} # word -> expansion
-		self._help_width = 8
-		self._alias_width = 1
-		self._batch = False
+		self.help_width = 8
+		self.alias_width = 1
 		self.prompt = "> "
 		self.prompt2 = ">> "
 		self.comment_char = "#"
 		self.help_separator = "  - "
 
+	def write(self, b):
+		self.stdout.write(b)
+
 	def flush(self):
 		self.stdout.flush()
 
 	def writef(self, b):
-		self.stdout.write(b)
+		self.write(b)
 		self.flush()
 
 	def before_prompt(self, argv):
@@ -69,18 +74,29 @@ class Shell:
 	def unknown_command(self, argv):
 		self.writef(f'{argv[0]}: Command not found\n')
 
-	def add(self, command, usage, description, action):
-		self._commands.append(dict(command=command, usage=usage, description=description))
-		self._actions[command] = action
-		self._abbreviations.add(command)
-		self._help_width = max(self._help_width, len(command) + len(usage) + 1)
+	def add_command(self, *, action, name=None, usage="", description="", help=""):
+		name = name or (action.__name__[3:] if action.__name__.startswith("do_") else action.__name__)
+		summary, long_help = pydoc.splitdoc(pydoc.getdoc(action))
+		description = description or summary
+		help = help or long_help
+		self._commands.append(dict(name=name, usage=usage, description=description, help=help))
+		self._actions[name] = action
+		self._abbreviations.add(name)
+		self.help_width = max(self.help_width, len(name) + len(usage) + 1)
+
+	def add(self, *, name=None, usage="", description="", help=""):
+		"""Convenience decorator to add a command for the decorated function."""
+		def register_command(func):
+			self.add_command(action=func, name=name, usage=usage, description=description, help=help)
+			return func
+		return register_command
 
 	def add_standard_commands(self):
-		self.add("alias", "[name [command...]]", "make <name> do <command>, or show aliases", self.do_alias)
-		self.add("help", "[command...]", "help on all or specific commands", self.do_help)
-		self.add("quit", "", "exit the application", self.do_quit)
-		self.add("?", "[command...]", "help on all or specific commands", self.do_help)
-		self.add("x", "", "exit the application", self.do_quit)
+		self.add_command(action=self.do_alias, usage="[name [command...]]")
+		self.add_command(action=self.do_help, usage="[command...]")
+		self.add_command(action=self.do_quit)
+		self.add_command(action=self.do_help, name="?", usage="[command...]")
+		self.add_command(action=self.do_quit, name="x")
 
 	def eof(self):
 		self.writef("EOF\n")
@@ -95,6 +111,7 @@ class Shell:
 					action = self.unknown_command
 				action(argv)
 			except self.ImproperUsage:
+				self.write("Improper usage.\n")
 				self.do_help(['help', argv[0]])
 			except Abbreviator.AmbiguousAbbreviation:
 				self.writef("Ambiguous abbreviation, please be more specific\n")
@@ -193,25 +210,41 @@ class Shell:
 		return False
 
 	def do_quit(self, argv):
+		"""exit the application"""
 		raise self.QuitException
 
 	def do_help(self, argv):
-		commands = []
+		"""help on all or specific commands"""
+
+		commands = set()
 		for each in argv[1:]:
 			try:
-				commands.append(self._abbreviations.expand(each))
+				commands.add(self._abbreviations.expand(each))
 			except Abbreviator.AmbiguousAbbreviation:
-				self.writef(f"{each}: Ambiguous abbreviation, please be more specific\n")
-				commands = []
+				self.write(f"{each}: Ambiguous abbreviation, please be more specific\n")
+				commands = set()
 				break
 			except KeyError:
-				self.writef(f"{each}: Command not found\n")
-		fmt = "%%-%ds %%s%%s\n" % (self._help_width, )
+				self.write(f"{each}: Command not found\n")
+		fmt = "%%-%ds %%s%%s\n" % (self.help_width, )
 		for each in self._commands:
-			if len(commands) == 0 or each['command'] in commands:
-				self.writef(fmt % (each['command'] + ' ' + each['usage'], self.help_separator, each['description']))
+			if len(commands) == 0 or each['name'] in commands:
+				self.write(fmt % (each['name'] + ' ' + each['usage'], self.help_separator, each['description']))
+				if len(commands) == 1 and each['help']:
+					self.write("===\n")
+					self.write(each['help'])
+					self.writef("\n")
+		self.flush()
 
 	def do_alias(self, argv):
+		"""
+		make <name> do <command>, or show aliases
+
+		With no arguments, show all aliases.
+		With one argument, show just that alias.
+		With two or more arguments, define an alias of <name> to do <command>.
+		"""
+
 		if len(argv) > 2:
 			alias = argv[1]
 			if alias in self._actions and alias not in self._aliases:
@@ -224,7 +257,7 @@ class Shell:
 			self._abbreviations.add(alias)
 			self._actions[alias] = self.dispatch_alias
 			self._aliases[alias] = [command] + argv[3:]
-			self._alias_width = max(self._alias_width, len(alias))
+			self.alias_width = max(self.alias_width, len(alias))
 		else:
 			alias = None
 			alias_expansion = []
@@ -238,15 +271,13 @@ class Shell:
 				except Abbreviator.AmbiguousAbbreviation:
 					self.writef("Ambiguous alias abbreviation, please be more specific\n")
 					return
-			fmt = "alias %%-%ds  %%s\n" % (self._alias_width, )
+			fmt = "alias %%-%ds  %%s\n" % (self.alias_width, )
 			for k, v in ([(alias, alias_expansion)] if alias else self._aliases.items()):
-				self.writef(fmt % (k, ' '.join(v)))
+				self.write(fmt % (k, ' '.join(v)))
+			self.flush()
 
 if __name__ == "__main__":
 	import os
-
-	def foo(argv):
-		print("foo", argv)
 
 	class TestShell(Shell):
 		def __init__(self, *s, **kw):
@@ -260,9 +291,23 @@ if __name__ == "__main__":
 			if argv and not self._batch:
 				self._history_number += 1
 
-	s = TestShell()
-	s.add("foo", "[something [...]]", "does some stuff", foo)
-	s.add("fo", "[something [...]]", "does some stuff", foo)
-	s.add_standard_commands()
-	s.readrc(os.path.expanduser("~/.appshellrc"))
-	s.run()
+	shell = TestShell()
+
+	@shell.add(name="fo", usage="[something [...]]", description="does a thing")
+	@shell.add(usage="[something [...]]")
+	def do_foo(argv):
+		"""does something"""
+		print("foo", argv)
+
+	@shell.add(description="something else. i have long help.")
+	def do_other(argv):
+		"""
+		This docstring should just be the long help because there's
+		no blank line after the first line. Calling me raises
+		Shell.ImproperUsage, which should say so.
+		"""
+		raise Shell.ImproperUsage
+
+	shell.add_standard_commands()
+	shell.readrc(os.path.expanduser("~/.appshellrc"))
+	shell.run()
