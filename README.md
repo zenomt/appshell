@@ -101,6 +101,13 @@ Instance methods:
 * `Shell.flush()` <br>
   Convenience method calls `Shell.stdout.flush()`.
 
+Exceptions:
+
+* `Shell.QuitException` <br>
+  Raise this in an action to terminate `Shell.run()`.
+* `Shell.ImproperUsage` <br>
+  Convenience: raise this in an action to print the help message for the invoked command.
+
 Example
 -------
 
