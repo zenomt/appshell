@@ -7,8 +7,8 @@ ergonomic alternatives that the author prefers.
 In particular, the user can abbreviate commands (as long as the abbreviation isn't
 ambiguous), and the shell supports simple user-created command aliases.
 
-_`class`_ `appshell.Shell(stdin=sys.stdin, stdout=sys.stdout)`
---------------------------------------------------------------
+`class appshell.Shell(stdin=sys.stdin, stdout=sys.stdout)`
+----------------------------------------------------------
 An instance of `Shell` (or a subclass) is a line-oriented command interpreter.
 You add commands for it to recognize with `Shell.add_command()`, optionally
 add the standard command suite (`help`, `quit`, and `alias`), and start it
