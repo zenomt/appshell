@@ -31,11 +31,11 @@ class Abbreviator:
 		return w
 
 class Shell:
+	class _IncompleteQuote(Exception):
+		"Incomplete quote"
+
 	class QuitException(Exception):
 		"Quit"
-
-	class IncompleteQuote(Exception):
-		"Incomplete quote"
 
 	class ImproperUsage(Exception):
 		"Improper usage"
@@ -144,10 +144,10 @@ class Shell:
 				current_word.append(s[1:2])
 				s = s[1:]
 				if s == '\n':
-					raise self.IncompleteQuote("\\")
+					raise self._IncompleteQuote("\\")
 			elif s == '\n':
 				if quoting:
-					raise self.IncompleteQuote(quoting)
+					raise self._IncompleteQuote(quoting)
 			elif c in quotes:
 				if not quoting:
 					quoting = c
@@ -183,13 +183,13 @@ class Shell:
 							self.dispatch(argv)
 							self.after_command(argv)
 							break
-						except self.IncompleteQuote:
+						except self._IncompleteQuote:
 							if not batch:
 								self.writef(self.prompt2)
-								line2 = self.stdin.readline()
-								if not line2:
-									raise EOFError
-								line += line2
+							line2 = self.stdin.readline()
+							if not line2:
+								raise EOFError
+							line += line2
 			except self.QuitException:
 				return
 			except EOFError:
