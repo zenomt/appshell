@@ -131,7 +131,7 @@ Example
 
 The above example adds one command `foo`, with a help usage string of
 "`[args...]`", a help summary of "`Print my argument vector`", and long help.
-It then adds the standard command suit and then runs the command interpreter.
+It then adds the standard command suite and then runs the command interpreter.
 A sample run might look like:
 
     $ python3 example.py
