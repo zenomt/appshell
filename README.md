@@ -53,18 +53,18 @@ Instance variables:
 
 Instance methods:
 
-* `Shell.add_command(*, action, name=None, usage='', description='', help='')` <br>
+* `Shell.add_command(*, action, name=None, usage='', summary='', help='')` <br>
   Add a new command to the be recognized by the shell. Parameters:
   - `action` - A callable to call to execute the command, which takes one argument: a list
     of the argument vector for the command, including the command's name as entered.
   - `name` - The name for the command; if not specified, the name is the action's `__name__`
     minus a leading `do_`, if any.
   - `usage` - An optional short string for the help to indicate options or arguments the command might take.
-  - `description` - A short summary of the command to display in the help after the `help_separator`;
+  - `summary` - A short summary of the command to display in the help after the `help_separator`;
     if not specified, it is the summary line from the action's docstring, if any.
   - `help` - If specified, the "long help" to display if help is requested for this command specifically;
     if not specified, it is the rest of the action's docstring after the summary, if any.
-* `Shell.add(*, name=None, usage='', description='', help='')` <br>
+* `Shell.add(*, name=None, usage='', summary='', help='')` <br>
   Convenience decorator to call `add_command()` with the decorated function as the action.
 * `Shell.add_standard_commands()` <br>
   Add the suite of standard commands and their alternate names; specifically `alias`,

@@ -42,7 +42,7 @@ class Shell:
 
 	def __init__(self, stdin=sys.stdin, stdout=sys.stdout):
 		self._abbreviations = Abbreviator()
-		self._commands = [] # [dict(name, usage, description, help)...]
+		self._commands = [] # [dict(name, usage, summary, help)...]
 		self._actions = {} # name -> action
 		self._aliases = {} # alias -> expansion
 		self._batch = False
@@ -77,20 +77,20 @@ class Shell:
 	def unknown_command(self, argv):
 		self.writef(f'{argv[0]}: Command not found\n')
 
-	def add_command(self, *, action, name=None, usage="", description="", help=""):
+	def add_command(self, *, action, name=None, usage="", summary="", help=""):
 		name = name or (action.__name__[3:] if action.__name__.startswith("do_") else action.__name__)
-		summary, long_help = pydoc.splitdoc(pydoc.getdoc(action))
-		description = description or summary
+		doc_summary, long_help = pydoc.splitdoc(pydoc.getdoc(action))
+		summary = summary or doc_summary
 		help = help or long_help
-		self._commands.append(dict(name=name, usage=usage, description=description, help=help))
+		self._commands.append(dict(name=name, usage=usage, summary=summary, help=help))
 		self._actions[name] = action
 		self._abbreviations.add(name)
 		self.help_width = max(self.help_width, len(name) + len(usage) + 1)
 
-	def add(self, *, name=None, usage="", description="", help=""):
+	def add(self, *, name=None, usage="", summary="", help=""):
 		"""Convenience decorator to add a command for the decorated function."""
 		def register_command(func):
-			self.add_command(action=func, name=name, usage=usage, description=description, help=help)
+			self.add_command(action=func, name=name, usage=usage, summary=summary, help=help)
 			return func
 		return register_command
 
@@ -232,7 +232,7 @@ class Shell:
 		fmt = "%%-%ds %%s%%s\n" % (self.help_width, )
 		for each in self._commands:
 			if len(commands) == 0 or each['name'] in commands:
-				self.write(fmt % (each['name'] + ' ' + each['usage'], self.help_separator, each['description']))
+				self.write(fmt % (each['name'] + ' ' + each['usage'], self.help_separator, each['summary']))
 				if len(commands) == 1 and each['help']:
 					self.write("===\n")
 					self.write(each['help'])
@@ -296,13 +296,13 @@ if __name__ == "__main__":
 
 	shell = TestShell()
 
-	@shell.add(name="fo", usage="[something [...]]", description="does a thing")
+	@shell.add(name="fo", usage="[something [...]]", summary="does a thing")
 	@shell.add(usage="[something [...]]")
 	def do_foo(argv):
 		"""does something"""
 		print("foo", argv)
 
-	@shell.add(description="something else. i have long help.")
+	@shell.add(summary="something else. i have long help.")
 	def do_other(argv):
 		"""
 		This docstring should just be the long help because there's
