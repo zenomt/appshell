@@ -40,7 +40,7 @@ class Shell:
 	class ImproperUsage(Exception):
 		"Improper usage"
 
-	def __init__(self, stdin=sys.stdin, stdout=sys.stdout):
+	def __init__(self, stdin=None, stdout=sys.stdout):
 		self._abbreviations = Abbreviator()
 		self._commands = [] # [dict(name, usage, summary, help)...]
 		self._actions = {} # name -> action
@@ -54,6 +54,17 @@ class Shell:
 		self.prompt2 = ">> "
 		self.comment_char = "#"
 		self.help_separator = "  - "
+
+	def input(self, prompt):
+		if self.stdin:
+			if not self._batch:
+				self.writef(prompt)
+			return self.stdin.readline()
+		try:
+			rv = input('' if self._batch else prompt)
+			return rv if rv.endswith('\n') else rv + '\n'
+		except EOFError:
+			return ''
 
 	def write(self, b):
 		self.stdout.write(b)
@@ -170,8 +181,7 @@ class Shell:
 			try:
 				if not batch:
 					self.before_prompt(argv)
-					self.writef(self.prompt)
-				line = self.stdin.readline()
+				line = self.input(self.prompt)
 				if not line:
 					if not batch:
 						self.eof()
@@ -184,9 +194,7 @@ class Shell:
 							self.after_command(argv)
 							break
 						except self._IncompleteQuote:
-							if not batch:
-								self.writef(self.prompt2)
-							line2 = self.stdin.readline()
+							line2 = self.input(self.prompt2)
 							if not line2:
 								raise EOFError
 							line += line2
@@ -281,6 +289,7 @@ class Shell:
 
 if __name__ == "__main__":
 	import os
+	import readline
 
 	class TestShell(Shell):
 		def __init__(self, *s, **kw):
@@ -313,4 +322,4 @@ if __name__ == "__main__":
 
 	shell.add_standard_commands()
 	shell.readrc(os.path.expanduser("~/.appshellrc"))
-	shell.run()
+	shell.run(batch = not sys.stdin.isatty())

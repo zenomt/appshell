@@ -7,12 +7,12 @@ ergonomic alternatives that the author prefers.
 In particular, the user can abbreviate commands (as long as the abbreviation isn't
 ambiguous), and the shell supports simple user-created command aliases.
 
-`class appshell.Shell(stdin=sys.stdin, stdout=sys.stdout)`
+`class appshell.Shell(stdin=None, stdout=sys.stdout)`
 ----------------------------------------------------------
 An instance of `Shell` (or a subclass) is a line-oriented command interpreter.
 You add commands for it to recognize with `Shell.add_command()`, optionally
 add the standard command suite (`help`, `quit`, and `alias`), and start it
-running. It reads lines from its input (default `sys.stdin`), each line
+running. It reads lines (by default using `input()`), each line
 representing one command. The first word on the line is the name of the
 command, and the remaining words (if any) are the command's command-specific
 arguments.  It runs until its input is exhausted or `Shell.Quit` is
@@ -40,7 +40,8 @@ means that if the user enters `bar biff`, it should be interpreted as though
 
 Instance variables:
 
-* `Shell.stdin` - File object from which commands are read with its `readline()` method; `sys.stdin` by default.
+* `Shell.stdin` - File object from which commands are read with its `readline()` method; if `None` (the default),
+  lines are read using the builtin `input()` function.
 * `Shell.stdout` - File object to which output is written; `sys.stdout` by default.
 * `Shell.help_width` - The width, in characters, for command names and usages in the `help` so that
   the help summaries will all be aligned. This starts at 8 characters and is extended as commands are added.
@@ -70,9 +71,9 @@ Instance methods:
   Add the suite of standard commands and their alternate names; specifically `alias`,
   `help`, `quit`, `?` (the same as `help`), and `x` (the same as `quit`).
 * `Shell.run(batch=False)` <br>
-  Run the command interpreter, reading lines with `Shell.stdin.readline()` until the end of
-  the input is reached, or `Shell.Quit` is raised. If `batch` is `True`, don't print
-  the prompt before reading each command.
+  Run the command interpreter, reading lines with `input()` if `Shell.stdin` is `None` otherwise
+  with `Shell.stdin.readline()` until the end of the input is reached, or `Shell.Quit` is raised.
+  If `batch` is `True`, don't print the prompt before reading each command.
 * `Shell.readrc(filename)` <br>
   Attempt to read commands from the file named `filename` by opening it and temporarily setting `Shell.stdin` to
   the file and executing `Shell.run(batch=True)`.
