@@ -34,7 +34,7 @@ class Shell:
 	class _IncompleteQuote(Exception):
 		"Incomplete quote"
 
-	class QuitException(Exception):
+	class Quit(Exception):
 		"Quit"
 
 	class ImproperUsage(Exception):
@@ -103,7 +103,7 @@ class Shell:
 
 	def eof(self):
 		self.writef("EOF\n")
-		raise self.QuitException
+		raise self.Quit
 
 	def dispatch(self, argv):
 		if argv:
@@ -190,7 +190,7 @@ class Shell:
 							if not line2:
 								raise EOFError
 							line += line2
-			except self.QuitException:
+			except self.Quit:
 				return
 			except EOFError:
 				self.writef("Unexpected EOF\n")
@@ -214,7 +214,7 @@ class Shell:
 
 	def do_quit(self, argv):
 		"""exit the application"""
-		raise self.QuitException
+		raise self.Quit
 
 	def do_help(self, argv):
 		"""help on all or specific commands"""

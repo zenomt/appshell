@@ -15,7 +15,7 @@ add the standard command suite (`help`, `quit`, and `alias`), and start it
 running. It reads lines from its input (default `sys.stdin`), each line
 representing one command. The first word on the line is the name of the
 command, and the remaining words (if any) are the command's command-specific
-arguments.  It runs until its input is exhausted or `Shell.QuitException` is
+arguments.  It runs until its input is exhausted or `Shell.Quit` is
 raised (this is what the `quit` command does).
 
 Lines beginning with the comment character (`#` by default) are ignored.
@@ -71,13 +71,13 @@ Instance methods:
   `help`, `quit`, `?` (the same as `help`), and `x` (the same as `quit`).
 * `Shell.run(batch=False)` <br>
   Run the command interpreter, reading lines with `Shell.stdin.readline()` until the end of
-  the input is reached, or `Shell.QuitException` is raised. If `batch` is `True`, don't print
+  the input is reached, or `Shell.Quit` is raised. If `batch` is `True`, don't print
   the prompt before reading each command.
 * `Shell.readrc(filename)` <br>
   Attempt to read commands from the file named `filename` by opening it and temporarily setting `Shell.stdin` to
   the file and executing `Shell.run(batch=True)`.
 * `Shell.do_quit(argv)` <br>
-  Raise `Shell.QuitException` to quit the application.
+  Raise `Shell.Quit` to quit the application.
 * `Shell.do_help(argv)` <br>
   - With no arguments, prints the summary help for all commands.
   - With exactly one argument, prints the summary and long help (if any) for that command.
@@ -103,7 +103,7 @@ Instance methods:
 
 Exceptions:
 
-* `Shell.QuitException` <br>
+* `Shell.Quit` <br>
   Raise this in an action to terminate `Shell.run()`.
 * `Shell.ImproperUsage` <br>
   Convenience: raise this in an action to print the help message for the invoked command.
