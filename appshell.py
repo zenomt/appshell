@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: MIT
 
 import sys
-import functools
 import pydoc
 
 class Abbreviator:
