@@ -66,7 +66,6 @@ Instance methods:
     if not specified, it is the rest of the action's docstring after the summary, if any.
 * `Shell.add(*, name=None, usage='', summary='', help='')` <br>
   Convenience decorator to call `add_command()` with the decorated function as the action.
-  Returns the action callable with no additional wrapping.
 * `Shell.add_standard_commands()` <br>
   Add the suite of standard commands and their alternate names; specifically `alias`,
   `help`, `quit`, `?` (the same as `help`), and `x` (the same as `quit`).
