@@ -134,7 +134,7 @@ Example
     if __name__ == "__main__":
         shell.run()
 
-The above example adds two commands for the same action fuction: `foo` and
+The above example adds two commands for the same action function: `foo` and
 `alt`, with help usage strings of "`[args...]`", help summaries of
 "`Print my argument vector`", and long help. It then adds the standard command
 suite and then runs the command interpreter. A sample run might look like:
