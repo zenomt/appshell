@@ -46,7 +46,7 @@ Instance variables:
 * `Shell.help_width` - The width, in characters, for command names and usages in the `help` so that
   the help summaries will all be aligned. This starts at 8 characters and is extended as commands are added.
 * `Shell.alias_width` - The width, in characters, for the word `alias` and the alias name,
-  so that expansions will be aligned when listing aliases; 1 by default.
+  so that expansions will be aligned when listing aliases. This starts at 1 character and is extended as aliases are added.
 * `Shell.prompt` - The prompt to display before the next command is read, default "`> `".
 * `Shell.prompt2` - The prompt to display to continue a line if the previous line ended mid-quote, default "`>> `".
 * `Shell.comment_char` - The character or string that, if a line begins with it, the line is ignored, default "`#`".
@@ -67,6 +67,9 @@ Instance methods:
     if not specified, it is the rest of the action's docstring after the summary, if any.
 * `Shell.add(*, name=None, usage='', summary='', help='')` <br>
   Convenience decorator to call `add_command()` with the decorated function as the action.
+  This function returns a function of one argument (taking the decorated function) that itself
+  returns the decorated function with no additional wrapping, so `add()` decorators can
+  be stacked to give alternate names to the same action function, if desired.
 * `Shell.add_standard_commands()` <br>
   Add the suite of standard commands and their alternate names; specifically `alias`,
   `help`, `quit`, `?` (the same as `help`), and `x` (the same as `quit`).
@@ -116,6 +119,7 @@ Example
 
     shell = Shell()
 
+    @shell.add(name="alt", usage="[args...]")
     @shell.add(usage="[args...]")
     def do_foo(argv):
         """
@@ -130,14 +134,15 @@ Example
     if __name__ == "__main__":
         shell.run()
 
-The above example adds one command `foo`, with a help usage string of
-"`[args...]`", a help summary of "`Print my argument vector`", and long help.
-It then adds the standard command suite and then runs the command interpreter.
-A sample run might look like:
+The above example adds two commands for the same action fuction: `foo` and
+`alt`, with help usage strings of "`[args...]`", help summaries of
+"`Print my argument vector`", and long help. It then adds the standard command
+suite and then runs the command interpreter. A sample run might look like:
 
     $ python3 example.py
     > h
     foo [args...]               - Print my argument vector
+    alt [args...]               - Print my argument vector
     alias [name [command...]]   - make <name> do <command>, or show aliases
     help [command...]           - help on all or specific commands
     quit                        - exit the application
@@ -152,5 +157,5 @@ A sample run might look like:
     > alias bar foo bar
     > bar baz
     ['foo', 'bar', 'baz']
-    > quit
+    > q
     $
